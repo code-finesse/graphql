@@ -165,46 +165,311 @@
 <details>
   <summary>Build Out</summary>
   
-  ## Subheading
-1. Step one for Bash
+1. create a mutation to register a user
 
-    ```bash
+    ```graphql
+    const typeDefs = gql`
+        type Query {
+            hello: String!
+        }
 
-    $mkdir project
-
+        type Mutation {
+            register: User
+        }
+    `;
     ```
-    * things to note
----
 
-2. Step two for Javascript
+    ---
+    
+2. create a schema for a user and put in all of the fields the user will have inside typeDefs
 
-    ```javascript
-
-    const str = 'The quick brown fox jumps over the lazy dog.';
-
+    ```graphql
+    type User {
+            id: ID!
+            username: String!
+        }
     ```
-    * things to note
----
 
-3. Step three for Python
+    - id is used on the frontend with apollo for the cache
+    
+    ---
+    
+3. add the mutation to the resolvers
 
-    ```python
-
-    str = 'The quick brown fox jumps over the lazy dog.'
-
+    ```graphql
+    Mutation: {
+            register: () => ({
+                id: 1,
+                username: 'bob'
+            })
+        }
     ```
-    * things to note
----
 
-4. Step four for Java
+    - just a dummy example
+    
+    ---
+    
+4. check it in the browser
 
-    ```java
+    ```graphql
+    # request
 
-    String str = 'The quick brown fox jumps over the lazy dog.';
+    mutation {
+      register {
+        id
+        username
+      }
+    }
 
+    # response
+
+    {
+      "data": {
+        "register": {
+          "id": "1",
+          "username": "bob"
+        }
+      }
+    }
     ```
-    * things to note
----
+
+    ---
+    
+5. create a schema for register response
+
+    ```graphql
+    type Error {
+        field: String!
+        message: String!
+    }
+
+    type RegisterResponse {
+    		# brackets around type makes it an array
+    		# you can also make all fields non-nullable if you want eg. [Error!]!
+        error: [Error]
+        # User type is nested
+        user: User
+    }
+
+    type Mutation {
+        register: RegisterResponse!
+    }
+    ```
+
+    - we also created an Error type in case there are errors and set it to an array in case there were multiple errors
+    
+    ---
+    
+6. set up register mutation
+
+    ```graphql
+    Mutation: {
+            register: () => ({
+                errors: [{
+                    field: 'username',
+                    message: 'bad'
+                },
+                {
+                    field: 'username2',
+                    message: 'bad2'
+                },
+            ],
+                user: {
+                    id: 1,
+                    username: 'bob'
+                }
+            })
+        }
+    ```
+
+    - in each object we need to tell it which fields we want
+    
+    ---
+    
+7. check it in the browser
+
+    ```graphql
+    # request
+
+    mutation {
+      register {
+        errors {
+          field
+          message
+        }
+        user {
+          id
+          username
+        }
+      }
+    }
+
+    # response
+
+    {
+      "data": {
+        "register": {
+          "errors": [
+            {
+              "field": "username",
+              "message": "bad"
+            },
+            {
+              "field": "username2",
+              "message": "bad2"
+            }
+          ],
+          "user": {
+            "id": "1",
+            "username": "bob"
+          }
+        }
+      }
+    }
+    ```
+
+    - if you get rid of a field in our request you will not receive any of that type in your response
+    
+    ---
+    
+8. add arguments to register
+
+    ```graphql
+    type Mutation {
+            # give me a specific user
+            # the username and passwords are mandatory
+            # the age is sometimes required
+            register(username: String!, password: String!, age: Int): RegisterResponse!
+        }
+    ```
+
+    ----
+    
+9. check it out in your browser
+
+    ```graphql
+    # request
+
+    mutation {
+       register(username: "spongebob", password: "gary") {
+        user{
+          id
+        }
+      }
+    }
+
+    # response
+
+    {
+      "data": {
+        "register": {
+          "user": {
+            "id": "1"
+          }
+        }
+      }
+    }
+    ```
+
+    - graphql playground will also tell you exactly what you need to pass in
+    
+    ---
+    
+10. create an input (object that takes arguments) to register a user
+
+    ```graphql
+    input UserInfo {
+            username: String!
+            password: String!
+            age: Int
+        }
+
+    type Mutation {
+            # use the input above for argument in register
+            register(userInfo: UserInfo!): RegisterResponse!
+    				login(userInfo: UserInfo): Boolean!
+        }
+    ```
+
+    - you can put the mutation fields to put into something you can use multiple times
+    
+    ---
+    
+11. call it in the browser
+
+    ```graphql
+    # request
+
+    mutation {
+       register(userInfo: {username: "spongebob", password: "gary"}) {
+        user{
+          id
+        }
+      }
+    }
+
+    # response
+
+    {
+      "data": {
+        "register": {
+          "user": {
+            "id": "1"
+          }
+        }
+      }
+    }
+    ```
+
+    ---
+    
+12. update the query so we can read users
+
+    ```graphql
+    # in typeDefs
+    type Query {
+            hello: String!
+            user: User
+        }
+
+    # in resolvers
+    Query: {
+    		hello: () => 'Hello World!',
+    		user: () => ({
+    			id: 1,
+    			username: 'bob',
+    		}),
+    	},
+    ```
+
+    ---
+    
+13. check again in the browser
+
+    ```graphql
+    # request
+
+    query {
+      hello
+      user {
+        id
+        username
+      }
+    }
+
+    # response
+
+    {
+      "data": {
+        "hello": "Hello World!",
+        "user": {
+          "id": "1",
+          "username": "bob"
+        }
+      }
+    }
+    ```
+
 
 </details>
 
